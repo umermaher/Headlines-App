@@ -1,7 +1,6 @@
 package com.example.newsapp
 
 import android.graphics.Color
-import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
@@ -12,20 +11,41 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.android.volley.AuthFailureError
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import kotlinx.android.synthetic.main.activity_main.*
-import java.net.InetAddress
 import java.net.UnknownHostException
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.Boolean as Boolean1
 
 class MainActivity : AppCompatActivity(), NewsListAdapter.OnItemClickListener{
+    lateinit var connectionLiveData: CustomConnectionLiveData
     lateinit var mAdapter: NewsListAdapter
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        connectionLiveData= CustomConnectionLiveData(this)
+        connectionLiveData.observe(this, {isNetworkAvailable->
+            if (isNetworkAvailable) {
+                noInternetLayout.visibility= View.GONE
+            } else {
+                noInternetLayout.visibility= View.VISIBLE
+            }
+        })
+
         createRecyclerView()
+
+        swipeRefreshLayout.setOnRefreshListener {
+            createRecyclerView()
+            swipeRefreshLayout.isRefreshing=false
+        }
     }
 
     private fun createRecyclerView(){
@@ -58,7 +78,7 @@ class MainActivity : AppCompatActivity(), NewsListAdapter.OnItemClickListener{
 
             },
             {
-                Toast.makeText(this,it.message,Toast.LENGTH_LONG).show()
+//                Toast.makeText(this,it.message,Toast.LENGTH_LONG).show()
             })
         {
             @Throws(AuthFailureError::class)
@@ -81,7 +101,7 @@ class MainActivity : AppCompatActivity(), NewsListAdapter.OnItemClickListener{
         customTabsIntent.launchUrl(this, Uri.parse(url));
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean1 {
         val inflater=menuInflater
         inflater.inflate(R.menu.search_menu,menu)
 
@@ -93,52 +113,14 @@ class MainActivity : AppCompatActivity(), NewsListAdapter.OnItemClickListener{
         textView.setHintTextColor(Color.WHITE)
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
-            override fun onQueryTextChange(newText: String?): Boolean {
+            override fun onQueryTextChange(newText: String?): Boolean1 {
                 mAdapter.filter.filter(newText)
                 return false
             }
-            override fun onQueryTextSubmit(query: String?): Boolean {
+            override fun onQueryTextSubmit(query: String?): Boolean1 {
                 return false
             }
         })
         return true
     }
-
-//    private fun isNetworkAvailable():Boolean{
-//        val connectivityManager=getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-//        val capabilities=connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-//        return (capabilities!=null && capabilities.hasCapability(NET_CAPABILITY_INTERNET))
-//    }
-//    private fun isNetworkAvailable(): Boolean {
-//        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-////        return connectivityManager.activeNetworkInfo != null && connectivityManager.activeNetworkInfo!!.isConnected
-//        val activeNetworkInfo=connectivityManager.activeNetworkInfo
-//    Toast.makeText(this,"Hell",Toast.LENGTH_LONG).show()
-//        return activeNetworkInfo!=null && (activeNetworkInfo.type==ConnectivityManager.TYPE_WIFI || activeNetworkInfo.type==ConnectivityManager.TYPE_MOBILE)
-//
-//    }
-//    private fun isInternetAvailable(): Boolean {
-//        try {
-//            val address: InetAddress = InetAddress.getByName("www.google.com")
-//            return !address.equals("")
-//        } catch (e: UnknownHostException) {
-//            // Log error
-//            Toast.makeText(this,e.message,Toast.LENGTH_LONG).show()
-//        }
-//        return false
-//    }
-//    private fun drawLayout(){
-//        if(isNetworkAvailable()){
-//            internetLayout.visibility= View.VISIBLE
-//            noInternetLayout.visibility=View.GONE
-//            //it will load
-//            createRecyclerView()
-//        }else{
-//            noInternetLayout.visibility=View.VISIBLE
-//            Toast.makeText(this,"No Connection",Toast.LENGTH_LONG).show()
-//            internetLayout.visibility=View.GONE
-//        }
-//    }
-
-    fun tryAgainBtn(view: android.view.View) {}
 }
